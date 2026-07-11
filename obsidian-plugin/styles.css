@@ -1,0 +1,5 @@
+.patrick-modal { max-width: 640px; }
+.patrick-question { box-sizing: border-box; width: 100%; resize: vertical; }
+.patrick-response { margin-top: 1rem; }
+.patrick-error { color: var(--text-error); margin-top: 0.5rem; }
+.patrick-copy { margin-top: 0.75rem; }

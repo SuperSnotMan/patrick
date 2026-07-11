@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from vault import read_note
+from ai import ask
 
 app = FastAPI(
     title="Patrick Core",
@@ -8,8 +9,22 @@ app = FastAPI(
     version="0.1.0"
 )
 
+class NoteContext(BaseModel):
+    title: str = ""
+    path: str = ""
+    content: str = ""
+    cursor_line: int = 0
+    selection: str = ""
+
+
+class PatrickContext(BaseModel):
+    vault: str = ""
+    note: NoteContext = Field(default_factory=NoteContext)
+
+
 class ChatRequest(BaseModel):
     message: str
+    context: PatrickContext = Field(default_factory=PatrickContext)
 
 class NoteRequest(BaseModel):
     vault: str
@@ -26,8 +41,11 @@ def root():
 
 @app.post("/chat")
 def chat(request: ChatRequest):
+
+    response = ask(request.message, request.context.note.content)
+
     return {
-        "response": f"You said: {request.message}"
+        "response": response
     }
 
 @app.post("/vault/read")
