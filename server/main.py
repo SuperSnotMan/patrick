@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from vault import read_note
 from ai import ask
+from pydantic import BaseModel
+
+
 
 app = FastAPI(
     title="Patrick Core",
@@ -61,3 +64,12 @@ def vault_read(request: NoteRequest):
     return {
         "content": content
     }
+
+class TerminalRequest(BaseModel):
+    command: list[str]
+
+from tools.terminal import run_command
+
+@app.post("/tools/terminal")
+def terminal(request: TerminalRequest):
+    return run_command(request.command)
