@@ -2,7 +2,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 from vault import read_note
-from ai import ask
+from assistant import ask
+from local_ai_settings import (
+    LocalAiSettings,
+    load_settings,
+    save_settings,
+)
+from ai.local_openai import LocalOpenAIProvider
 
 
 app = FastAPI(
@@ -75,8 +81,45 @@ def vault_read(request: NoteRequest):
 class TerminalRequest(BaseModel):
     command: list[str]
 
-from tools.terminal import run_command
+
+from tool_manager import ToolManager
+
+_TOOL_MANAGER = ToolManager()
+
 
 @app.post("/tools/terminal")
 def terminal(request: TerminalRequest):
-    return run_command(request.command)
+    return _TOOL_MANAGER.execute("terminal", " ".join(request.command))
+
+
+class LocalAiSettingsRequest(BaseModel):
+    enabled: bool = False
+    endpoint: str = ""
+    model: str = ""
+
+
+@app.get("/local-ai/settings")
+def local_ai_settings():
+    """Return the current local OpenAI-compatible provider settings."""
+    settings = load_settings()
+    return settings.to_dict()
+
+
+@app.post("/local-ai/settings")
+def update_local_ai_settings(request: LocalAiSettingsRequest):
+    """Persist local OpenAI-compatible provider settings."""
+    settings = LocalAiSettings(
+        enabled=request.enabled,
+        endpoint=request.endpoint,
+        model=request.model,
+    )
+    save_settings(settings)
+    return settings.to_dict()
+
+
+@app.post("/local-ai/test")
+def test_local_ai(request: LocalAiSettingsRequest):
+    """Probe the configured endpoint to confirm the local runtime is reachable."""
+    provider = LocalOpenAIProvider(model=request.model, endpoint=request.endpoint)
+    reachable = provider.is_available()
+    return {"reachable": reachable}
