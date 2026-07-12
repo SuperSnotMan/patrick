@@ -16,6 +16,10 @@ class PatrickController:
         self.refresh_timer = QTimer(self.window)
         self.refresh_timer.setInterval(1000)
 
+        # Share the client so the sidebar's Local AI settings dialog can reach
+        # the server over HTTP.
+        self.window.sidebar.client = self.client
+
         self.window.input_bar.submitted.connect(self.handle_submit)
         self.window.sidebar.new_chat_requested.connect(self.handle_new_chat)
         self.window.header.set_connection("connecting")

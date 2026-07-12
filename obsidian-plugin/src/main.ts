@@ -1,6 +1,7 @@
-import { Editor, Menu, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { Editor, Menu, Notice, Platform, Plugin, PluginSettingTab, Setting } from "obsidian";
 import { buildObsidianContext } from "./context";
 import { DesktopLauncher } from "./desktop-launcher";
+import { resolveConnection } from "./connection";
 import { PatrickApi } from "./patrick-api";
 import { PatrickModal } from "./patrick-modal";
 import type { PatrickAction } from "./types";
@@ -16,17 +17,27 @@ export default class PatrickPlugin extends Plugin {
   settings: PatrickSettings = DEFAULT_SETTINGS;
 
   async onload(): Promise<void> {
-    await this.loadSettings();
-    this.addCommand({ id: "ask", name: "Ask", callback: () => this.openAskModal() });
-    this.addCommand({ id: "open-desktop-window", name: "Open desktop window", callback: () => void this.openDesktopWindow() });
-    this.registerEvent(this.app.workspace.on("editor-menu", (menu, editor) => this.addContextMenu(menu, editor)));
-    this.registerEvent(this.app.workspace.on("file-open", () => void this.syncContextInBackground()));
-    this.app.workspace.onLayoutReady(() => void this.syncContextInBackground());
-    this.addSettingTab(new PatrickSettingTab(this.app, this));
+    try {
+      await this.loadSettings();
+      this.addCommand({ id: "ask", name: "Ask", callback: () => this.openAskModal() });
+      this.registerEvent(this.app.workspace.on("editor-menu", (menu, editor) => this.addContextMenu(menu, editor)));
+      this.addSettingTab(new PatrickSettingTab(this.app, this));
+
+      if (Platform.isMobile) return;
+
+      this.addCommand({ id: "open-desktop-window", name: "Open desktop window", callback: () => void this.openDesktopWindow() });
+      this.registerEvent(this.app.workspace.on("file-open", () => void this.syncContextInBackground()));
+      this.app.workspace.onLayoutReady(() => void this.syncContextInBackground());
+    } catch (error) {
+      // A failure here must not disable the plugin on mobile. Log and stay enabled.
+      console.error("Patrick failed to initialise fully:", error);
+    }
   }
 
   openAskModal(): void {
-    new PatrickModal(this.app, this.api, () => buildObsidianContext(this.app)).open();
+    void this.resolveApi().then((api) =>
+      new PatrickModal(this.app, api, () => buildObsidianContext(this.app)).open()
+    );
   }
 
   private async openDesktopWindow(): Promise<void> {
@@ -55,11 +66,22 @@ export default class PatrickPlugin extends Plugin {
 
   private runAction(action: PatrickAction, editor: Editor): void {
     const prompt = `${action.replace("_", " ")}: ${editor.getSelection()}`;
-    new PatrickModal(this.app, this.api, () => buildObsidianContext(this.app, editor), prompt, action).open();
+    void this.resolveApi().then((api) =>
+      new PatrickModal(this.app, api, () => buildObsidianContext(this.app, editor), prompt, action).open()
+    );
   }
 
   private get api(): PatrickApi {
     return new PatrickApi(this.settings.serverUrl);
+  }
+
+  /** Resolve the active Patrick Core connection, falling back gracefully. */
+  private async resolveApi(): Promise<PatrickApi> {
+    const connection = await resolveConnection(this.settings.serverUrl);
+    if (connection.source === "local") {
+      new Notice("Patrick Core is not reachable. Using local-only mode.");
+    }
+    return new PatrickApi(connection.baseUrl);
   }
 
   async loadSettings(): Promise<void> {
@@ -84,8 +106,8 @@ class PatrickSettingTab extends PluginSettingTab {
       }));
     new Setting(this.containerEl)
       .setName("Patrick Linux companion path")
-      .setDesc("Leave empty for ~/Projects/Patrick/patrick-linux.")
-      .addText((text) => text.setPlaceholder("~/Projects/Patrick/patrick-linux").setValue(this.plugin.settings.desktopAppPath).onChange(async (value) => {
+      .setDesc("Leave empty for ~/Projects/Patrick/desktop.")
+      .addText((text) => text.setPlaceholder("~/Projects/Patrick/desktop").setValue(this.plugin.settings.desktopAppPath).onChange(async (value) => {
         this.plugin.settings.desktopAppPath = value.trim();
         await this.plugin.saveSettings();
       }));

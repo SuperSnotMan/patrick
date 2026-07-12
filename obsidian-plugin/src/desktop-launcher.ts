@@ -1,14 +1,33 @@
-import { Notice } from "obsidian";
-import { access, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { spawn } from "node:child_process";
-import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
+import { Notice, Platform } from "obsidian";
 import type { PatrickContext } from "./types";
 
-/** Linux adapter: update the background bridge, then optionally open its PySide6 desktop UI. */
+/**
+ * Desktop companion bridge.
+ *
+ * On desktop this updates the background bridge state and optionally opens the
+ * native PySide6 window. On mobile those Node-only operations are unavailable,
+ * so the launcher degrades to a no-op while the rest of the plugin (chat over
+ * the REST API) keeps working unchanged.
+ */
 export class DesktopLauncher {
   async open(context: PatrickContext, serverUrl: string, configuredAppPath: string, background = false): Promise<void> {
-    const appPath = configuredAppPath.trim() || join(homedir(), "Projects", "Patrick", "patrick-linux");
+    if (Platform.isMobile) {
+      // Mobile has no native companion and no Node runtime. The plugin still
+      // talks to Patrick Core over HTTP, so there is nothing to launch here.
+      return;
+    }
+
+    await this.openDesktop(context, serverUrl, configuredAppPath, background);
+  }
+
+  private async openDesktop(context: PatrickContext, serverUrl: string, configuredAppPath: string, background: boolean): Promise<void> {
+    // Imported lazily so the Node-only modules are never evaluated on mobile.
+    const { access, mkdtemp, rm, writeFile } = await import("node:fs/promises");
+    const { spawn } = await import("node:child_process");
+    const { homedir, tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+
+    const appPath = configuredAppPath.trim() || join(homedir(), "Projects", "Patrick", "desktop");
     const bridge = join(appPath, "bridge_client.py");
     const launcher = join(appPath, "launch.sh");
     let directory: string | undefined;

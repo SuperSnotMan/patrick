@@ -12,7 +12,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from .client import PatrickClient
 from .icons import ICON_MEMORY, ICON_NEW_CHAT, ICON_RECENT, ICON_SETTINGS
+from .settings import LocalAiSettingsDialog
 from .theme import (
     ACCENT,
     ACCENT_HOVER,
@@ -72,8 +74,9 @@ class SidebarWidget(QFrame):
 
     new_chat_requested = Signal()
 
-    def __init__(self) -> None:
+    def __init__(self, client: PatrickClient | None = None) -> None:
         super().__init__()
+        self.client = client or PatrickClient()
         self.setObjectName("panel")
         self.setStyleSheet(
             f"background: {SURFACE}; border: 1px solid {BORDER}; border-radius: {RADIUS}px;"
@@ -142,11 +145,6 @@ class SidebarWidget(QFrame):
 
     def _show_settings(self) -> None:
         self._set_active(self.settings_button)
-        QMessageBox.information(
-            self,
-            "Settings",
-            "Settings are configured in the Obsidian plugin and the server .env file.\n\n"
-            "• Patrick Core URL: Obsidian → Patrick settings\n"
-            "• AI provider: server/.env",
-        )
+        dialog = LocalAiSettingsDialog(self.client)
+        dialog.exec()
         self._set_active(self.new_chat_button)

@@ -118,3 +118,40 @@ class PatrickClient:
                 return True
         except Exception:
             return False
+
+    def get_local_ai_settings(self) -> dict[str, object]:
+        request = Request(self._base_url("/local-ai/settings"), method="GET")
+        try:
+            with urlopen(request, timeout=5) as response:
+                return json.loads(response.read())
+        except Exception:
+            return {"enabled": False, "endpoint": "", "model": ""}
+
+    def save_local_ai_settings(self, enabled: bool, endpoint: str, model: str) -> dict[str, object]:
+        payload = {"enabled": enabled, "endpoint": endpoint, "model": model}
+        request = Request(
+            self._base_url("/local-ai/settings"),
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=5) as response:
+                return json.loads(response.read())
+        except Exception:
+            return {"enabled": enabled, "endpoint": endpoint, "model": model}
+
+    def test_local_ai(self, endpoint: str, model: str) -> bool:
+        payload = {"enabled": True, "endpoint": endpoint, "model": model}
+        request = Request(
+            self._base_url("/local-ai/test"),
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=8) as response:
+                body = json.loads(response.read())
+                return bool(body.get("reachable", False))
+        except Exception:
+            return False
