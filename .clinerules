@@ -1,0 +1,25 @@
+You are working on Patrick.
+
+Always prefer maintainable architecture.
+
+Never replace working functionality with placeholders.
+
+Always run the application after edits.
+
+Fix any compile/runtime errors before stopping.
+
+Do not redesign the UI unless requested.
+
+Use PySide6.
+
+Desktop communicates with the FastAPI server over HTTP only.
+
+Do not import server modules into the desktop.
+
+Use dataclasses and type hints.
+
+Keep files modular.
+
+If something is broken, repair it before adding new features.
+
+Always make the project compile before ending a task.

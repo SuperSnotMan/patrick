@@ -18,6 +18,7 @@ STATE_FILE = Path(
 DEFAULT_SERVER_URL = "http://localhost:8000"
 DEFAULT_CONTEXT = {
     "vault": "Local Workspace",
+    "vault_path": "",
     "note": {
         "title": "No Active Note",
         "path": "",

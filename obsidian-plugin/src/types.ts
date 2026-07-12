@@ -11,6 +11,7 @@ export interface PatrickNoteContext {
 
 export interface PatrickContext {
   vault: string;
+  vault_path: string;
   note: PatrickNoteContext;
 }
 

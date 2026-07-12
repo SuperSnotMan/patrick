@@ -22,8 +22,12 @@ export async function buildObsidianContext(app: App, editor?: Editor): Promise<P
     }
   }
 
+  const adapter = app.vault.adapter as unknown as { basePath?: string };
+  const vaultPath = adapter.basePath ?? "";
+
   return {
     vault: app.vault.getName(),
+    vault_path: vaultPath,
     note: {
       title: file?.basename ?? "",
       path: file?.path ?? "",

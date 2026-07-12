@@ -5,7 +5,7 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PatrickContext } from "./types";
 
-/** Linux adapter: update the background bridge, then optionally open its Tk UI. */
+/** Linux adapter: update the background bridge, then optionally open its PySide6 desktop UI. */
 export class DesktopLauncher {
   async open(context: PatrickContext, serverUrl: string, configuredAppPath: string, background = false): Promise<void> {
     const appPath = configuredAppPath.trim() || join(homedir(), "Projects", "Patrick", "patrick-linux");

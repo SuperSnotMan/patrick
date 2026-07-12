@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
+
 from vault import read_note
 from ai import ask
-from pydantic import BaseModel
-
 
 
 app = FastAPI(
@@ -22,6 +21,7 @@ class NoteContext(BaseModel):
 
 class PatrickContext(BaseModel):
     vault: str = ""
+    vault_path: str = ""
     note: NoteContext = Field(default_factory=NoteContext)
 
 
@@ -45,7 +45,14 @@ def root():
 @app.post("/chat")
 def chat(request: ChatRequest):
 
-    response = ask(request.message, request.context.note.content)
+    response = ask(
+        request.message,
+        vault_path=request.context.vault_path,
+        note_title=request.context.note.title,
+        note_path=request.context.note.path,
+        note_content=request.context.note.content,
+        selection=request.context.note.selection,
+    )
 
     return {
         "response": response

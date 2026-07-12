@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Patrick
+Comment=Patrick desktop companion for Obsidian and Patrick Core
+Exec=/home/aaron/Projects/Patrick/patrick-linux/launch.sh
+Path=/home/aaron/Projects/Patrick/desktop
+Terminal=false
+StartupNotify=true
+Categories=Utility;
+Icon=applications-internet
